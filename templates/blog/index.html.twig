@@ -1,0 +1,57 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+
+    <div class="row">
+        <div class="col-12">
+            <h2>Blog!</h2>
+        </div>
+
+        {% for post in posts %}
+            <div class="col-4">
+                <div class="card mb-3">
+                    <div class="card-header">{{ post.title }}</div>
+                    <img class="card-img-top" src="{{ asset(post.image) }}" alt="{{ post.title }}" height="200">
+                    <div class="card-body d-flex justify-content-between">
+                        <small class="text-muted">{{ post.publishedAt|date("d/m/Y") }}</small>
+                        <small class="text-muted">{{ post.comments|length }} comments</small>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between">
+                        <a href="{{ path('blog_read', {id: post.id}) }}">Read More</a>
+                        {% if is_granted('UPDATE', post) %}
+                            <a href="{{ path('blog_update', {id: post.id}) }}">Update</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+
+        <div class="col-12">
+            <nav aria-label="Pagination">
+                <ul class="pagination">
+                    {% if page > 1 %}
+                        <li class="page-item">
+                            <a href="{{ path('blog_index', {page: page - 1, limit: limit}) }}"
+                               class="page-link">Précédant</a>
+                        </li>
+                    {% endif %}
+                    {% for p in range %}
+                        <li class="page-item {{ page == p ? 'active' : '' }}">
+                            <a href="{{ path('blog_index', {page: p, limit: limit}) }}"
+                               class="page-link">{{ p }}</a>
+                        </li>
+                    {% endfor %}
+
+                    {% if page < pages %}
+                        <li class="page-item">
+                            <a href="{{ path('blog_index', {page: page + 1, limit: limit}) }}"
+                               class="page-link">Suivant</a>
+                        </li>
+                    {% endif %}
+
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+{% endblock %}
