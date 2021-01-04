@@ -2,11 +2,9 @@
 
 namespace App\Entity;
 
-use App\Repository\PostRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * @ORM\Entity(repositoryClass=PostRepository::class)
@@ -21,12 +19,10 @@ class Post
     private int $id;
 
     /**
-     * @var string
+     * @var string|null
      * @ORM\Column(name="title", type="string", length=150)
-     * @Assert\NotBlank
-     * @Assert\Length(min=5)
      */
-    private string $title;
+    private ?string $title = null;
 
     /**
      * @var \DateTimeImmutable
@@ -35,12 +31,10 @@ class Post
     private \DateTimeImmutable $publishedAt;
 
     /**
-     * @var string
+     * @var string|null
      * @ORM\Column(name="content", type="text")
-     * @Assert\NotBlank
-     * @Assert\Length(min=10)
      */
-    private string $content;
+    private ?string $content = null;
 
     /**
      * @var Collection
@@ -73,13 +67,6 @@ class Post
         return $this->id;
     }
 
-    /**
-     * @return string
-     */
-    public function getTitle(): string
-    {
-        return $this->title;
-    }
 
     /**
      * @return \DateTimeImmutable
@@ -87,22 +74,6 @@ class Post
     public function getPublishedAt(): \DateTimeImmutable
     {
         return $this->publishedAt;
-    }
-
-    /**
-     * @return string
-     */
-    public function getContent(): string
-    {
-        return $this->content;
-    }
-
-    /**
-     * @param string $title
-     */
-    public function setTitle(string $title): void
-    {
-        $this->title = $title;
     }
 
     /**
@@ -114,12 +85,37 @@ class Post
     }
 
     /**
-     * @param string $content
+     * @return string|null
      */
-    public function setContent(string $content): void
+    public function getTitle(): ?string
+    {
+        return $this->title;
+    }
+
+    /**
+     * @param string|null $title
+     */
+    public function setTitle(?string $title): void
+    {
+        $this->title = $title;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getContent(): ?string
+    {
+        return $this->content;
+    }
+
+    /**
+     * @param string|null $content
+     */
+    public function setContent(?string $content): void
     {
         $this->content = $content;
     }
+
 
     /**
      * @return Collection

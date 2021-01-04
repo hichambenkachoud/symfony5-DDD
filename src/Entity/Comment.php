@@ -22,8 +22,6 @@ class Comment
     /**
      * @var string|null
      * @ORM\Column(type="string", nullable=true)
-     * @Assert\NotBlank(groups={"anonymous"})
-     * @Assert\Length(min=5, groups={"anonymous"})
      */
     private ?string $author = null;
 
@@ -68,7 +66,7 @@ class Comment
     }
 
     /**
-     * @return null|string
+     * @return string|null
      */
     public function getAuthor(): ?string
     {
@@ -76,15 +74,15 @@ class Comment
     }
 
     /**
-     * @param string $author
+     * @param string|null $author
      */
-    public function setAuthor(string $author): void
+    public function setAuthor(?string $author): void
     {
         $this->author = $author;
     }
 
     /**
-     * @return null|string
+     * @return string|null
      */
     public function getContent(): ?string
     {
@@ -92,12 +90,13 @@ class Comment
     }
 
     /**
-     * @param string $content
+     * @param string|null $content
      */
-    public function setContent(string $content): void
+    public function setContent(?string $content): void
     {
         $this->content = $content;
     }
+
 
     /**
      * @return \DateTimeImmutable

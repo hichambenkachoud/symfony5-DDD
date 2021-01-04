@@ -7,6 +7,8 @@ use App\Entity\Comment;
 use App\Entity\Post;
 use App\Form\CommentType;
 use App\Form\PostType;
+use App\Handler\CommentHandler;
+use App\Handler\PostHandler;
 use App\Security\Voter\PostVoter;
 use App\Uploader\UploaderInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -56,99 +58,73 @@ class BlogController extends AbstractController
      * @Route("/article-{id}", name="blog_read", methods={"GET", "POST"})
      * @param Post $post
      * @param Request $request
+     * @param CommentHandler $commentHandler
      * @return Response
      */
-    public function read(Post $post, Request $request): Response
+    public function read(Post $post, Request $request, CommentHandler $commentHandler): Response
     {
         $comment = new Comment();
         $comment->setPost($post);
         if ($this->isGranted('ROLE_USER')) {
             $comment->setUser($this->getUser());
         }
-        $form = $this->createForm(CommentType::class, $comment, [
+
+        $options = [
             'validation_groups' => $this->isGranted('ROLE_USER') ? "Default" : "anonymous"
-        ]);
-        $form->handleRequest($request);
+        ];
 
-        if ($form->isSubmitted() && $form->isValid())
+        if ($commentHandler->handle($request, $comment, $options))
         {
-            $this->getDoctrine()->getManager()->persist($comment);
-            $this->getDoctrine()->getManager()->flush();
-
             return $this->redirectToRoute('blog_read', ['id' => $post->getId()]);
         }
 
-        return $this->render('read.html.twig', ['post' => $post, 'form' => $form->createView()]);
+        return $this->render('read.html.twig', ['post' => $post, 'form' => $commentHandler->createView()]);
     }
 
     /**
      * @Route("/create", name="blog_create", methods={"GET", "POST"})
      * @param Request $request
-     * @param UploaderInterface $uploader
+     * @param PostHandler $postHandler
      * @return Response
      */
     public function create(
         Request $request,
-        UploaderInterface $uploader
+        PostHandler $postHandler
     ): Response
     {
         $this->denyAccessUnlessGranted('ROLE_USER');
 
         $post =  new Post();
-        $form = $this->createForm(PostType::class, $post, [
-            'validation_groups' => ['Default', 'create']
-        ])->handleRequest($request);
+        $post->setUser($this->getUser());
 
-        if ($form->isSubmitted() && $form->isValid())
+        if ($postHandler->handle($request, $post, ['validation_groups' => ['Default', 'create']]))
         {
-            /** @var UploadedFile $file */
-            $file = $form->get("file")->getData();
-            $fileName = $uploader->upload($file);
-
-            $post->setImage($fileName);
-            $this->getDoctrine()->getManager()->persist($post);
-            $this->getDoctrine()->getManager()->flush();
-
             return $this->redirectToRoute('blog_read', ['id' => $post->getId()]);
         }
 
-        return $this->render('blog/create.html.twig', ['form' => $form->createView()]);
+        return $this->render('blog/create.html.twig', ['form' => $postHandler->createView()]);
     }
 
     /**
      * @Route("/update/{id}", name="blog_update", methods={"GET", "POST"})
      * @param Request $request
      * @param Post $post
-     * @param UploaderInterface $uploader
+     * @param PostHandler $postHandler
      * @return Response
      */
     public function update(
         Request $request,
         Post $post,
-        UploaderInterface $uploader
+        PostHandler $postHandler
     ): Response
     {
-
         $this->denyAccessUnlessGranted(PostVoter::UPDATE, $post);
 
-
-        $form = $this->createForm(PostType::class, $post)->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid())
+        if ($postHandler->handle($request, $post))
         {
-            /** @var UploadedFile $file */
-            $file = $form->get("file")->getData();
-            if ($file !== null)
-            {
-                $fileName = $uploader->upload($file);
-                $post->setImage($fileName);
-            }
-
-            $this->getDoctrine()->getManager()->flush();
-
             return $this->redirectToRoute('blog_read', ['id' => $post->getId()]);
         }
 
-        return $this->render('blog/update.html.twig', ['form' => $form->createView()]);
+        return $this->render('blog/update.html.twig', ['form' => $postHandler->createView()]);
     }
 }
