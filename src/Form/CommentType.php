@@ -3,14 +3,13 @@
 
 namespace App\Form;
 
-use App\Entity\Comment;
+use App\DataTransferObject\Comment;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\Form\FormEvent;
-use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 /**
  * Class CommentType
@@ -19,6 +18,24 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 class CommentType extends AbstractType
 {
 
+    /**
+     * @var AuthorizationCheckerInterface
+     */
+    private AuthorizationCheckerInterface $authorizerChecker;
+
+    /**
+     * CommentType constructor.
+     * @param AuthorizationCheckerInterface $authorizerChecker
+     */
+    public function __construct(AuthorizationCheckerInterface $authorizerChecker)
+    {
+        $this->authorizerChecker = $authorizerChecker;
+    }
+
+    /**
+     * @param FormBuilderInterface $builder
+     * @param array $options
+     */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
@@ -26,12 +43,9 @@ class CommentType extends AbstractType
                 'label' => 'Your message'
             ]);
 
-        $builder->addEventListener(FormEvents::PRE_SET_DATA, function (FormEvent $event) {
-            if ($event->getData()->getUser() !== null) {
-                return;
-            }
-
-            $event->getForm()->add('author', TextType::class, [
+        if (!$this->authorizerChecker->isGranted('ROLE_USER'))
+        {
+            $builder->add('author', TextType::class, [
                 'label' => 'Author',
                 'attr' => [
                     'class' => 'form-control'
@@ -43,8 +57,7 @@ class CommentType extends AbstractType
                     'class' => 'form-label'
                 ]
             ]);
-
-        });
+        }
     }
 
     /**
