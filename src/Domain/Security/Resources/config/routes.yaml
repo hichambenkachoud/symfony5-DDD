@@ -1,0 +1,7 @@
+security_login:
+  path: /login
+  controller: App\Domain\Security\Controller\Login
+
+security_logout:
+  path: /logout
+  controller: App\Domain\Security\Controller\Logout
