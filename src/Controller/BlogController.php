@@ -9,31 +9,76 @@ use App\Form\CommentType;
 use App\Form\PostType;
 use App\Handler\CommentHandler;
 use App\Handler\PostHandler;
+use App\Presenter\CreatePostPresenterInterface;
+use App\Presenter\PostListPresenterInterface;
+use App\Presenter\ReadPostPresenterInterface;
+use App\Presenter\UpdatePostPresenterInterface;
+use App\Repository\PostRepository;
+use App\Responder\CreatePostResponder;
+use App\Responder\PostListResponder;
+use App\Responder\ReadPostResponder;
+use App\Responder\RedirectPostResponder;
 use App\Security\Voter\PostVoter;
 use App\Uploader\UploaderInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\String\Slugger\SluggerInterface;
+use Twig\Environment;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
 
 /**
  * Class BlogController
  * @package App\Controller
  */
-class BlogController extends AbstractController
+class BlogController
 {
+    use AuthorizationTrait;
+
+    /**
+     * @var Environment
+     */
+    private Environment $twig;
+
+    /**
+     * @var UrlGeneratorInterface
+     */
+    private UrlGeneratorInterface $urlGenerator;
+
+    /**
+     * BlogController constructor.
+     * @param Environment $twig
+     * @param UrlGeneratorInterface $urlGenerator
+     */
+    public function __construct(Environment $twig, UrlGeneratorInterface $urlGenerator)
+    {
+        $this->twig = $twig;
+        $this->urlGenerator = $urlGenerator;
+    }
+
+
     /**
      * @Route("/", name="blog_index", methods={"GET"})
      * @param Request $request
+     * @param PostRepository $postRepository
+     * @param PostListPresenterInterface $presenter
      * @return Response
      */
-    public function index(Request $request): Response
+    public function index(
+        Request $request,
+        PostRepository $postRepository,
+        PostListPresenterInterface $presenter
+    ): Response
     {
         $page = $request->get('page', 1);
         $limit = $request->get('limit', 10);
-        $posts = $this->getDoctrine()->getRepository(Post::class)->getPaginatedPosts(
+        $posts = $postRepository->getPaginatedPosts(
             $page,
             $limit
         );
@@ -45,13 +90,7 @@ class BlogController extends AbstractController
             min($page + 3, $pages)
         );
 
-        return $this->render("blog/index.html.twig", [
-            "posts" => $posts,
-            "pages" => $pages,
-            "page" => $page,
-            "limit" => $limit,
-            "range" => $range
-        ]);
+        return $presenter->present(new PostListResponder($posts, $pages, $page, $limit, $range));
     }
 
     /**
@@ -59,15 +98,21 @@ class BlogController extends AbstractController
      * @param Post $post
      * @param Request $request
      * @param CommentHandler $commentHandler
+     * @param ReadPostPresenterInterface $presenter
      * @return Response
+     * @throws LoaderError
+     * @throws RuntimeError
+     * @throws SyntaxError
      */
-    public function read(Post $post, Request $request, CommentHandler $commentHandler): Response
+    public function read(
+        Post $post,
+        Request $request,
+        CommentHandler $commentHandler,
+        ReadPostPresenterInterface $presenter
+    ): Response
     {
         $comment = new Comment();
         $comment->setPost($post);
-        if ($this->isGranted('ROLE_USER')) {
-            $comment->setUser($this->getUser());
-        }
 
         $options = [
             'validation_groups' => $this->isGranted('ROLE_USER') ? "Default" : "anonymous"
@@ -75,34 +120,35 @@ class BlogController extends AbstractController
 
         if ($commentHandler->handle($request, $comment, $options))
         {
-            return $this->redirectToRoute('blog_read', ['id' => $post->getId()]);
+            return $presenter->redirect(new RedirectPostResponder($post));
         }
 
-        return $this->render('read.html.twig', ['post' => $post, 'form' => $commentHandler->createView()]);
+        return $presenter->present(new ReadPostResponder($post, $commentHandler->createView()));
     }
 
     /**
      * @Route("/create", name="blog_create", methods={"GET", "POST"})
      * @param Request $request
      * @param PostHandler $postHandler
+     * @param CreatePostPresenterInterface $presenter
      * @return Response
      */
     public function create(
         Request $request,
-        PostHandler $postHandler
+        PostHandler $postHandler,
+        CreatePostPresenterInterface $presenter
     ): Response
     {
         $this->denyAccessUnlessGranted('ROLE_USER');
 
         $post =  new Post();
-        $post->setUser($this->getUser());
 
         if ($postHandler->handle($request, $post, ['validation_groups' => ['Default', 'create']]))
         {
-            return $this->redirectToRoute('blog_read', ['id' => $post->getId()]);
+            return $presenter->redirect(new RedirectPostResponder($post));
         }
 
-        return $this->render('blog/create.html.twig', ['form' => $postHandler->createView()]);
+        return $presenter->present(new CreatePostResponder($postHandler->createView()));
     }
 
     /**
@@ -110,21 +156,23 @@ class BlogController extends AbstractController
      * @param Request $request
      * @param Post $post
      * @param PostHandler $postHandler
+     * @param UpdatePostPresenterInterface $presenter
      * @return Response
      */
     public function update(
         Request $request,
         Post $post,
-        PostHandler $postHandler
+        PostHandler $postHandler,
+        UpdatePostPresenterInterface $presenter
     ): Response
     {
         $this->denyAccessUnlessGranted(PostVoter::UPDATE, $post);
 
         if ($postHandler->handle($request, $post))
         {
-            return $this->redirectToRoute('blog_read', ['id' => $post->getId()]);
+            return $presenter->redirect(new RedirectPostResponder($post));
         }
 
-        return $this->render('blog/update.html.twig', ['form' => $postHandler->createView()]);
+        return $presenter->present(new CreatePostResponder($postHandler->createView()));
     }
 }

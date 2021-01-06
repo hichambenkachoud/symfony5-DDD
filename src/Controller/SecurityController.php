@@ -6,35 +6,42 @@ namespace App\Controller;
 
 use App\DataTransferObject\Credentials;
 use App\Form\LoginType;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use App\Presenter\LoginPresenterInterface;
+use App\Responder\LoginResponder;
 use Symfony\Component\Form\FormError;
+use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
+use Twig\Environment;
 
 /**
  * Class SecurityController
  * @package App\Controller
  */
-class SecurityController extends AbstractController
+class SecurityController
 {
 
     /**
      * @Route("/login", name="security_login", methods={"GET", "POST"})
      * @param AuthenticationUtils $authenticationUtils
+     * @param FormFactoryInterface $formFactory
+     * @param LoginPresenterInterface $presenter
      * @return Response
      */
-    public function login(AuthenticationUtils $authenticationUtils): Response
+    public function login(
+        AuthenticationUtils $authenticationUtils,
+        FormFactoryInterface $formFactory,
+        LoginPresenterInterface $presenter
+    ): Response
     {
-        $form = $this->createForm(LoginType::class, new Credentials($authenticationUtils->getLastUsername()));
+        $form = $formFactory->create(LoginType::class, new Credentials($authenticationUtils->getLastUsername()));
 
         if (null !== $authenticationUtils->getLastAuthenticationError(false)) {
             $form->addError(new FormError($authenticationUtils->getLastAuthenticationError()->getMessage()));
         }
 
-        return$this->render('security/login.html.twig', [
-            'form' => $form->createView()
-        ]);
+        return $presenter->present(new LoginResponder($form->createView()));
     }
 
     /**
