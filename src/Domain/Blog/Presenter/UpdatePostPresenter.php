@@ -4,6 +4,7 @@ namespace App\Domain\Blog\Presenter;
 
 use App\Domain\Blog\Responder\CreatePostResponder;
 use App\Domain\Blog\Responder\RedirectPostResponder;
+use App\Domain\Blog\Responder\UpdatePostResponder;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -37,10 +38,13 @@ class UpdatePostPresenter implements UpdatePostPresenterInterface
     }
 
     /**
-     * @param CreatePostResponder $responder
+     * @param UpdatePostResponder $responder
      * @return Response
+     * @throws \Twig\Error\LoaderError
+     * @throws \Twig\Error\RuntimeError
+     * @throws \Twig\Error\SyntaxError
      */
-    public function present(CreatePostResponder $responder): Response
+    public function present(UpdatePostResponder $responder): Response
     {
         return new Response(
             $this->twig->render('blog/update.html.twig',

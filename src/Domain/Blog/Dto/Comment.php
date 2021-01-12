@@ -23,7 +23,7 @@ class Comment
      * @var string|null
      *
      * @Assert\NotBlank
-     * @Assert\Length(min=10)
+     * @Assert\Length(min=10, groups={"anonymous"})
      */
     private ?string $content;
 

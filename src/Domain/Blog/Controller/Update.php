@@ -8,6 +8,7 @@ use App\Application\Security\Voter\PostVoter;
 use App\Domain\Blog\Handler\PostHandler;
 use App\Domain\Blog\Responder\CreatePostResponder;
 use App\Domain\Blog\Responder\RedirectPostResponder;
+use App\Domain\Blog\Responder\UpdatePostResponder;
 use App\Infrastructure\Controller\AuthorizationTrait;
 use App\Domain\Blog\Presenter\UpdatePostPresenterInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -43,6 +44,6 @@ class Update
             return $presenter->redirect(new RedirectPostResponder($post));
         }
 
-        return $presenter->present(new CreatePostResponder($postHandler->createView()));
+        return $presenter->present(new UpdatePostResponder($postHandler->createView()));
     }
 }
