@@ -5,6 +5,7 @@ namespace App\Domain\Blog\Presenter;
 
 use App\Domain\Blog\Responder\CreatePostResponder;
 use App\Domain\Blog\Responder\RedirectPostResponder;
+use App\Domain\Blog\Responder\UpdatePostResponder;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -16,10 +17,10 @@ interface UpdatePostPresenterInterface
 {
 
     /**
-     * @param CreatePostResponder $responder
+     * @param UpdatePostResponder $responder
      * @return Response
      */
-    public function present(CreatePostResponder $responder): Response;
+    public function present(UpdatePostResponder $responder): Response;
 
     /**
      * @param RedirectPostResponder $responder
