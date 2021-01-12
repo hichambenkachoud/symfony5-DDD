@@ -12,3 +12,5 @@ Pré-requis :
 - créer un fichier pour l'environnement de développement .env.dev.local : DATABASE_URL=mysql://USER:PASSWORD@127.0.0.1:3306/DBNAME
 
 - composer prepare: pour créer la base de données et intérgrer les fixtures.
+
+- composer prepare-test: pour créer la base de données et intérgrer les fixtures qui servent aux tests.
